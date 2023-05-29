@@ -1,0 +1,32 @@
+# 忽略Terraform的.tfstate文件
+*.tfstate
+*.tfstate.*
+
+# 忽略本地机器生成的文件和目录
+*.tfvars
+.terraform/
+
+# 忽略自动生成的备份文件
+*.bak
+
+# 忽略IDE和编辑器生成的文件和目录
+.vscode/
+.idea/
+*.sublime-*
+*.swp
+*.swo
+
+# 忽略日志文件
+*.log
+
+# 忽略临时文件
+*.tmp
+
+# 忽略敏感信息
+*.pem
+*.key
+*.pub
+
+# 忽略依赖管理工具的目录（例如，Go的vendor目录）
+vendor/
+
