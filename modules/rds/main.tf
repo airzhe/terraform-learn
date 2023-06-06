@@ -1,29 +1,52 @@
-resource "aws_db_instance" "postgresql" {
-  allocated_storage      = var.allocated_storage
-  engine                 = "postgres"
-  engine_version         = "13.6"
-  instance_class         = "db.t4g.large"
-  username               = var.db_username
-  password               = var.db_password
-  skip_final_snapshot    = true
-  vpc_security_group_ids = [aws_security_group.allow_db.id]
+module "db" {
+  source  = "terraform-aws-modules/rds/aws"
+  version = "5.9.0"
+
+  identifier        = "${var.env}-postgres"
+  engine            = "postgres"
+  engine_version    = "15"
+  family            = "postgres15"
+  instance_class    = var.instance_class
+  allocated_storage = var.allocated_storage
+  db_name           = "test"
+  username          = var.db_username
+
+  vpc_security_group_ids      = [module.postgresql_security_group.security_group_id]
+  allow_major_version_upgrade = true
+  maintenance_window          = "Mon:00:00-Mon:03:00"
+  backup_window               = "03:00-06:00"
+
+  # Enhanced Monitoring - see example for details on how to create the role
+  # by yourself, in case you don't want to create it automatically
+  monitoring_interval    = "30"
+  monitoring_role_name   = "MyRDSMonitoringRole"
+  create_monitoring_role = true
 
   tags = {
-    Name = "runner-rds"
+    Owner       = "runner"
+    Environment = var.env
   }
 
-  lifecycle {
-    prevent_destroy = true
-  }
+  # Database Deletion Protection
+  deletion_protection = true
+
 }
 
-resource "aws_security_group" "allow_db" {
-  name        = "allow_db"
-  description = "Allow inbound traffic to DB"
-  ingress {
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [var.ec2_security_group_id]
-  }
+data "aws_vpc" "default" {
+  default = true
+}
+
+module "postgresql_security_group" {
+  source = "terraform-aws-modules/security-group/aws"
+
+  name        = "postgres"
+  description = "Security group for user-service with custom ports open within VPC, and PostgreSQL publicly open"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress_with_source_security_group_id = [
+    {
+      rule                     = "postgresql-tcp"
+      source_security_group_id = var.ec2_security_group_id
+    }
+  ]
 }

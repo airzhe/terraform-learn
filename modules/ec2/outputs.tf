@@ -1,9 +1,9 @@
 output "instance_public_ip" {
   description = "Public IP of the EC2 instance"
-  value       = aws_instance.myinstance.public_ip
+  value       = module.ec2-instance.public_ip
 }
 
 output "security_group_id" {
-  value = aws_security_group.allow_ssh.id
+  value =  module.ssh_security_group.security_group_id
 }
 
