@@ -37,3 +37,11 @@ module "s3_bucket" {
   env  = var.env
   user = var.user
 }
+
+
+
+module "dynamodb-table" {
+  source = "../../modules/dynamodb-table"
+
+  env  = var.env
+}
