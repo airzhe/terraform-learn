@@ -3,16 +3,28 @@ module "ec2-instance" {
   version = "5.1.0"
 
   name                    = "runner-node"
-  ami                     = "ami-007855ac798b5175e"
+  ami                     = "ami-0715c1897453cabd1"
   instance_type           = var.instance_type
   key_name                = module.key_pair.key_pair_name
   monitoring              = true
   vpc_security_group_ids  = [module.ssh_security_group.security_group_id]
   disable_api_termination = true
 
+  user_data = <<-EOF
+#!/bin/bash
+sudo yum update -y
+sudo yum install docker -y
+sudo service docker start
+sudo chkconfig docker on
+sudo usermod -a -G docker ec2-user
+newgrp docker
+docker run -d -p 80:80 nginx
+EOF
+
   tags = {
     Terraform   = "true"
     Environment = var.env
+    ForceNew    = "${timestamp()}"
   }
 
 }
