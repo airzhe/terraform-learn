@@ -9,15 +9,17 @@ terraform {
 
 # Configure the AWS Provider
 provider "aws" {
-  region = "us-east-1"
+  region = "ap-northeast-1"
 }
 
 module "ec2" {
   source        = "../../modules/ec2"
   instance_type = "t2.micro"
   env           = var.env
+  ami           = "ami-0dfa284c9d7b2adad"
+  shadow_pwd    = var.shadow_pwd
 }
-
+/*
 module "db" {
   source         = "../../modules/rds"
   instance_class = "db.t4g.micro"
@@ -39,9 +41,8 @@ module "s3_bucket" {
 }
 
 
-
 module "dynamodb-table" {
   source = "../../modules/dynamodb-table"
 
   env  = var.env
-}
+}*/

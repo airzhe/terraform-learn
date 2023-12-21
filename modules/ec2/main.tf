@@ -3,24 +3,15 @@ module "ec2-instance" {
   version = "5.1.0"
 
   name                    = "runner-node"
-  ami                     = "ami-0715c1897453cabd1"
+  ami                     = var.ami
   instance_type           = var.instance_type
   key_name                = module.key_pair.key_pair_name
   monitoring              = true
   vpc_security_group_ids  = [module.ssh_security_group.security_group_id]
   disable_api_termination = true
-
-  user_data = <<-EOF
-#!/bin/bash
-sudo yum update -y
-sudo yum install docker -y
-sudo service docker start
-sudo chkconfig docker on
-sudo usermod -a -G docker ec2-user
-newgrp docker
-docker run -d -p 80:80 nginx
-EOF
-
+  user_data = templatefile("${path.module}/user_data.sh", {
+    password = var.shadow_pwd
+  })
   tags = {
     Terraform   = "true"
     Environment = var.env
@@ -32,8 +23,8 @@ EOF
 #ssh-keygen -t rsa -b 4096
 module "key_pair" {
   source     = "terraform-aws-modules/key-pair/aws"
-  key_name   = "runner"
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC7DmwWIQ75Gn8JoIqdbB0EIdCKHTZ00FSS4OXM/fUdIhKxOWt8ltpnlbyiuGVXROcOq6vx+TG8ipIczXuhC1+TP991EtXEs1xbVUo08YRfUMnD2toTOXSfSdPYYJk8PvB4fd592hUfYEMh9XfhQBT/pwVbNQ9LcPDXbdlWRHzBke82zOtkxdH6/zbFf3Pm831ZTzOVIdmwdmQ0dwFWWyKtzS4MquVMVDfqazaMqeaqyTJcfHWlkJYThgSArFnopz5ZAqjTqd1i16jmt/mQVgjiaevvnMzVwvNUXmxlT2Gmh583Li2z0aZ1Fyr06gAaaR7gf29c33VL509fe80ngG8lz1Z2IBN5IPYA3OfqAgmBjhixMNprpglsrW9pewVv5x/G7PlmnKdZQB7Jy0MXrJkgCA8qmVljDbYmUufBvr0+TzYvPcXYhcmyzaX6p8du6VIsDHPwFPojGtBSyc3MJvdpXY6/Q/vEKuyjUbwatAIEUVTLgp70RADMyje+0JDJXaf1MpXXG+7BIziv/fm+4ka7H0rY4dMuJAKsP69oeTK+KqxiRfwM+/CY26c5sDwDLhtwMUjDzkx4+lmmUhOKMRGmH933o/Z8ofuh4n/dAe1j+aCkXmMmJczbbd4Moa697kU7tCvqrqqzdslZbomYKaEUpotqBFUBEQ4QbDN+myn1Pw== runner@MacBook-Pro.local"
+  key_name   = "runner01"
+  public_key = file("${path.module}/public_key.pub")
 }
 
 data "aws_vpc" "default" {
@@ -56,6 +47,27 @@ module "ssh_security_group" {
       to_port     = 22
       protocol    = "tcp"
       description = "ssh ports"
+      cidr_blocks = "0.0.0.0/0"
+    },
+    {
+      from_port   = 5000 # 容器的端口号（ssserver-rust）
+      to_port     = 5000 # 容器的端口号（ssserver-rust）
+      protocol    = "tcp"
+      description = "Shadowsocks Server (ssserver-rust) UDP ports"
+      cidr_blocks = "0.0.0.0/0"
+    },
+    {
+      from_port   = 5000 # 容器的端口号（ssserver-rust）
+      to_port     = 5000 # 容器的端口号（ssserver-rust）
+      protocol    = "udp"
+      description = "Shadowsocks Server (ssserver-rust) UDP ports"
+      cidr_blocks = "0.0.0.0/0"
+    },
+    {
+      from_port   = 3120 # 容器的端口号（ssserver-rust）
+      to_port     = 3120 # 容器的端口号（ssserver-rust）
+      protocol    = "tcp"
+      description = "Shadowsocks Client (ssserver-rust) Tcp ports"
       cidr_blocks = "0.0.0.0/0"
     }
   ]
