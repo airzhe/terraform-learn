@@ -15,9 +15,8 @@ module "ec2-instance" {
   tags = {
     Terraform   = "true"
     Environment = var.env
-    ForceNew    = "${timestamp()}"
+    #ForceNew    = "${timestamp()}"
   }
-
 }
 
 #ssh-keygen -t rsa -b 4096

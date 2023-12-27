@@ -12,6 +12,12 @@ provider "aws" {
   region = "ap-northeast-1"
 }
 
+provider "aws" {
+  region = "us-east-1"
+  alias  = "us_east_1"
+}
+
+
 module "ec2" {
   source        = "../../modules/ec2"
   instance_type = "t2.micro"
@@ -19,6 +25,16 @@ module "ec2" {
   ami           = "ami-0dfa284c9d7b2adad"
   shadow_pwd    = var.shadow_pwd
 }
+
+module "s3-bucket" {
+  source = "../../modules/s3-bucket"
+  providers = { aws = aws.us_east_1 }
+  env    = var.env
+  user   = "runner"
+  // 任何必要的变量
+}
+
+
 /*
 module "db" {
   source         = "../../modules/rds"
