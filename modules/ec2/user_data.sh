@@ -20,11 +20,15 @@ sudo usermod -a -G docker ec2-user
 # 运行 Nginx 容器
 sudo docker run -d --name nginx -p 80:80 nginx
 
+# 创建自定义网络
+sudo docker network create my-custom-network
+
 # 运行 Shadowsocks Rust 服务端
 sudo docker run --name ssserver-rust \
   --restart always \
   -p 5000:5000/tcp \
   -p 5000:5000/udp \
+  --network my-custom-network \
   -dit ghcr.io/shadowsocks/ssserver-rust:latest \
   ssserver -s "0.0.0.0:5000" -m "aes-256-gcm" -k "${password}"
 
@@ -32,5 +36,6 @@ sudo docker run --name ssserver-rust \
 sudo docker run --name sslocal-rust \
   --restart always \
   -p 3120:3120/tcp \
+  --network my-custom-network \
   -dit ghcr.io/shadowsocks/sslocal-rust:latest \
-  sslocal -b "0.0.0.0:3120" --protocol http -s "172.17.0.2:5000" -m "aes-256-gcm" -k "${password}"
+  sslocal -b "0.0.0.0:3120" --protocol http -s "ssserver-rust:5000" -m "aes-256-gcm" -k "${password}"
